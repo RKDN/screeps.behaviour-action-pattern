@@ -77,6 +77,10 @@ var mod = {
                 claim: 600, 
                 tough: 10
             },
+            DECAYABLES: [
+                STRUCTURE_ROAD, 
+                STRUCTURE_CONTAINER, 
+                STRUCTURE_RAMPART], 
             translateErrorCode: function(code){
                 var codes = {
                     0: 'OK',
@@ -161,9 +165,7 @@ var mod = {
             addById: function(array, id){
                 if(array == null) array = [];
                 var obj = Game.getObjectById(id);
-                if( !_.isUndefined(obj) ){
-                    array.push(obj);
-                }
+                if( obj ) array.push(obj);
                 return array;
             },
             processReports: function(){
