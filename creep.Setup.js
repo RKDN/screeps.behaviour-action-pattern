@@ -7,6 +7,7 @@ var Setup = function(typeName){
     this.minRcl = 0;
     this.minControllerLevel = 0;
     this.globalMeasurement = false;
+    this.measureByHome = false;
     this.sortedParts = true;
     this.bodyCosts = function(body){
         let costs = 0;
@@ -41,6 +42,28 @@ var Setup = function(typeName){
         let indexOfB = partsOrder.indexOf(b);
         return indexOfA - indexOfB;
     };
+    this.maxCost = function(){
+        var c = this
+        return (c.bodyCosts(c.multiBody)*c.maxMulti) + (c.bodyCosts(c.fixedBody));
+    };
+    this.EnoughStorageIsAvailableForDefense = function (spawn) {
+        if (!spawn.room.storage) return false; // No storage so not enough. 
+        let storeNeeded = (Creep.setup.melee.maxCost() + Creep.setup.ranger.maxCost()) * 1; // one of each
+        if (spawn.room.storage.store.energy >= storeNeeded) return true; // if we have enough storage then return true.
+        else
+            return false;
+    };
+
+    this.storageCapacityPercentage = function (spawn) {
+        if (!spawn.room.storage) return 0; // No storage so not enough. 
+        return spawn.room.storage.store.energy / spawn.room.storage.store.storeCapacity;
+    };
+
+    this.ShouldWeConserveForDefense = function (spawn) {
+        if (spawn.room.storage && !this.EnoughStorageIsAvailableForDefense(spawn)) return true;
+        return false;
+
+    };
     this.buildParams = function(spawn){
         var memory = {
             setup: null,
@@ -67,18 +90,35 @@ var Setup = function(typeName){
     this.isValidSetup = function(spawn){
         if( spawn.room.controller.level < this.minControllerLevel || spawn.room.energyAvailable < this.minAbsEnergyAvailable || spawn.room.relativeEnergyAvailable < this.minEnergyAvailable(spawn) ) 
             return false;
+            
         let maxCount = this.maxCount(spawn);
         let maxWeight = this.maxWeight(spawn);            
         if( maxCount == 0 || maxWeight == 0 ) 
             return false;
-        let population = this.globalMeasurement ? Population : spawn.room.population;
-        if( !population || !population.typeCount[this.type] )
-            return true;
         if( maxCount == null ) 
             maxCount = Infinity;
         if( maxWeight == null ) 
             maxWeight = Infinity;
-        return population.typeCount[this.type] < maxCount && population.typeWeight[this.type] < maxWeight;
+
+        let existingCount = 0;
+        let existingWeight = 0;
+        if( this.measureByHome ){
+            let home = spawn.pos.roomName;
+            let count = entry => {
+                if( entry.creepType == this.type && entry.homeRoom == home ){
+                    existingCount++;
+                    existingWeight += entry.weight;
+                }
+            };
+            _.forEach(Memory.population, count);
+        } else {
+            let population = this.globalMeasurement ? Population : spawn.room.population;
+            if( !population || !population.typeCount[this.type] )
+                return true;
+            existingCount = population.typeCount[this.type] || 0;
+            existingWeight = population.typeWeight[this.type] || 0;
+        }
+        return existingCount < maxCount && existingWeight < maxWeight;
     };
 }
 module.exports = Setup;

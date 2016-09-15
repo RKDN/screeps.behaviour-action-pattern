@@ -3,6 +3,7 @@ var Action = function(actionName){
     this.maxPerTarget = 1;
     this.maxPerAction = 1;
     this.targetRange = 1;
+    this.reachedRange = 1;
     this.renewTarget = true;
     this.getTargetId = function(target){ 
         return target.id || target.name;
@@ -35,76 +36,10 @@ var Action = function(actionName){
                 creep.data.actionName = null;
             }
         } 
-        if( range > 1 )
-            this.drive(creep, creep.target.pos, range);
+        creep.drive( creep.target.pos, this.reachedRange, this.targetRange, range );
     };
     this.work = function(creep){
         return ERR_INVALID_ARGS;
-    };
-    this.drive = function(creep, targetPos, rangeToTarget) {
-        // temporary deletion of old path storage as array
-        if( creep.data.path && typeof creep.data.path !== 'string' )
-            creep.data.path = null;
-
-        if( creep.fatigue > 0 ) {
-            return;
-        }
-        let lastPos = creep.data.lastPos;
-        creep.data.lastPos = new RoomPosition(creep.pos.x, creep.pos.y, creep.pos.roomName);
-        if( creep.data.moveMode == null || 
-            (lastPos && // moved
-            (lastPos.x != creep.pos.x || lastPos.y != creep.pos.y || lastPos.roomName != creep.pos.roomName)) 
-        ) {
-            // at this point its sure, that the creep DID move in the last loop. 
-            // from lastPos to creep.pos 
-            creep.room.recordMove(creep);
-
-            if( creep.data.moveMode == null) 
-                creep.data.moveMode = 'auto';
-            if( creep.data.path && creep.data.path.length > 1 )
-                creep.data.path = creep.data.path.substr(1);
-            else 
-                creep.data.path = this.getPath(creep, targetPos, true);
-            if( creep.data.path && creep.data.path.length > 0 ) {
-                let moveResult = creep.move(creep.data.path.charAt(0));
-                if( moveResult == OK ) { // OK is no guarantee that it will move to the next pos. 
-                    creep.data.moveMode = 'auto'; 
-                } else logErrorCode(creep, moveResult);
-            } else creep.say('NO PATH!');
-        } else if( creep.data.moveMode == 'auto' ) {
-            // try again to use path.
-            if( rangeToTarget > this.targetRange ) {
-                if( HONK ) creep.say('HONK', SAY_PUBLIC);
-                creep.data.moveMode = 'evade';
-            }
-            if( !creep.data.path || creep.data.path.length == 0 )
-                creep.data.path = this.getPath(creep, targetPos, true);
-            if( creep.data.path && creep.data.path.length > 0 ) {
-                let moveResult = creep.move(creep.data.path.charAt(0));
-                if( moveResult != OK ) logErrorCode(creep, moveResult);
-            } else creep.say('NO PATH!');
-        } else { // evade
-            // get path (don't ignore creeps)
-            // try to move. 
-            if( HONK ) creep.say('HONK', SAY_PUBLIC);
-            delete creep.data.path;
-            creep.data.path = this.getPath(creep, targetPos, false);
-            if( creep.data.path && creep.data.path.length > 0 ) {
-                if( creep.data.path.length > 5 ) 
-                    creep.data.path = creep.data.path.substr(0,4);
-                let moveResult = creep.move(creep.data.path.charAt(0));
-                if( moveResult != OK ) logErrorCode(creep, moveResult);
-            } else creep.say('NO PATH!');
-        }
-    };
-    this.getPath = function(creep, target, ignoreCreeps) {
-        let path = creep.room.findPath(creep.pos, target, {
-            serialize: true, 
-            ignoreCreeps: ignoreCreeps
-        });
-        if( path && path.length > 4 ) 
-            return path.substr(4);
-        else return null;
     };
     this.validateActionTarget = function(creep, target){
         if( this.isValidAction(creep) ){ // validate target or new

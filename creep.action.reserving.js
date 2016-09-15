@@ -1,11 +1,10 @@
 var action = new Creep.Action('reserving');
-action.reusePath = 10;
 action.isValidAction = function(creep){ return true; }; 
 action.isValidTarget = function(target){ return true; }; 
 action.isAddableAction = function(){ return true; };
 action.isAddableTarget = function(){ return true; }; 
 action.newTarget = function(creep){
-    let flag = FlagDir.find(FLAG_COLOR.claim.reserve, creep.pos, false, FlagDir.claimMod);
+    let flag = FlagDir.find(FLAG_COLOR.claim.reserve, creep.pos, false, FlagDir.reserveMod, creep.name);
     if( flag ) { 
         Population.registerCreepFlag(creep, flag);
     } 
@@ -36,7 +35,7 @@ action.step = function(creep){
     if( creep.target.color ){
         if( creep.flag.pos.roomName == creep.pos.roomName ) 
             creep.data.targetId = null;
-        this.drive(creep, creep.target.pos, Infinity);
+        creep.drive( creep.target.pos, 0, 1, Infinity );
         return;
     }
 
@@ -48,8 +47,7 @@ action.step = function(creep){
             creep.data.actionName = null;
         }
     } 
-    if( range > 1 )
-        this.drive(creep, creep.target.pos, range);
+    creep.drive( creep.target.pos, this.reachedRange, this.targetRange, range );
 };
 action.work = function(creep){
     var workResult;
