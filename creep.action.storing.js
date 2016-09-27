@@ -19,7 +19,7 @@ action.isValidAction = function(creep){
                         )
                     ) &&
                     creep.room.sourceEnergyAvailable > 0 && 
-                    creep.room.storage.store.energy <= LIMIT_STORAGE_ENERGY
+                    creep.room.storage.store.energy <= MAX_STORAGE_ENERGY
                 )
             )
         )
@@ -46,5 +46,8 @@ action.work = function(creep){
         }
     }
     return workResult;
+};
+action.onAssignment = function(creep, target) {
+    if( SAY_ASSIGNMENT ) creep.say(String.fromCharCode(9739), SAY_PUBLIC); 
 };
 module.exports = action;

@@ -2,19 +2,31 @@
 
 ## Roadmap
 
-I'm quite unsure about the corresponding timeline, but the order should fit. 
-
-* 2016 September  
-  * Pathfinding  
-  * Redesign/improvement of the worker concept.  
-    Utilizing containers & specialized 'workers'
+Just a vague idea...
 
 * 2016 October  
-  Build automation
+  * Build automation
+  * Operator creep
 
 * 2016 November  
-  Colony behaviour
+  * Labs
+  * Terminal
+  * Pathfinding  
 
 * 2016 December  
-  Extending functionality  
-  Utilize new structures & actions
+  * Tower Tuning
+  * Lots of change requests
+  
+* 2017 January
+  * Harvesting Power
+  * Performance Analysis
+  * Boosting
+
+* 2017 February  
+  TBD  
+  Possible Points
+  * Market
+  * Better offensive strategies
+  * Power creeps
+  * Performance optimization
+  * Memory redesign

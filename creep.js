@@ -8,6 +8,7 @@ var mod = {
             claiming: require('./creep.action.claiming'),
             reserving: require('./creep.action.reserving'),
             defending: require('./creep.action.defending'),
+            dismantling: require('./creep.action.dismantling'),
             feeding: require('./creep.action.feeding'), 
             fueling: require('./creep.action.fueling'), 
             guarding: require('./creep.action.guarding'), 
@@ -52,6 +53,26 @@ var mod = {
             var run = creep => creep.run();
             _.forEach(Game.creeps, run);
         };
+
+        Creep.partThreat = {
+            'move': { common: 0, boosted: 0 },
+            'work': { common: 1, boosted: 3 },
+            'carry': { common: 0, boosted: 0 },
+            'attack': { common: 2, boosted: 5 },
+            'ranged_attack': { common: 2, boosted: 5 },
+            'heal': { common: 2, boosted: 5 },
+            'claim': { common: 1, boosted: 3 },
+            'tough': { common: 1, boosted: 3 }
+        }
+        Creep.bodyThreat = function(body) {
+            let threat = 0;
+            let evaluatePart = part => {
+                threat += Creep.partThreat[part.type ? part.type : part][part.boost ? 'boosted' : 'common'];
+            };
+            body.forEach(evaluatePart);
+            return threat;
+        }
+
         Creep.prototype.run = function(behaviour){
             if( !this.spawning ){
                 if(!behaviour && this.data && this.data.creepType) {
@@ -106,6 +127,26 @@ var mod = {
                 }
             }
         };
+        Creep.prototype.leaveBorder = function() {
+            // if on border move away 
+            // for emergency case, Path not found
+            if( this.pos.y == 0 ){
+                this.move(BOTTOM);
+            } else if( this.pos.x == 0  ){
+                this.move(RIGHT);
+            } else if( this.pos.y == 49  ){
+                this.move(TOP);
+            } else if( this.pos.x == 49  ){
+                this.move(LEFT);
+            }
+            // TODO: CORNER cases
+        };
+        Creep.prototype.honk = function(){
+            if( HONK ) this.say(String.fromCharCode(9940), SAY_PUBLIC);//8655
+        },
+        Creep.prototype.honkEvade = function(){
+            if( HONK ) this.say(String.fromCharCode(9936), SAY_PUBLIC);
+        },
         Creep.prototype.drive = function( targetPos, intentionRange, enoughRange, range ) {
             // temporary cleanup
             if( this.data.route ) delete this.data.route;
@@ -115,7 +156,6 @@ var mod = {
             if( !range ) range = this.pos.getRangeTo(targetPos);
             let lastPos = this.data.lastPos;
             this.data.lastPos = new RoomPosition(this.pos.x, this.pos.y, this.pos.roomName);
-
             if( this.data.moveMode == null || 
                 (lastPos && // moved
                 (lastPos.x != this.pos.x || lastPos.y != this.pos.y || lastPos.roomName != this.pos.roomName)) 
@@ -140,11 +180,12 @@ var mod = {
                 } else if( range > enoughRange ) {
                     this.say('NO PATH!');
                     this.data.targetId = null;
+                    this.leaveBorder();
                 }
             } else if( this.data.moveMode == 'auto' ) {
                 // try again to use path.
                 if( range > enoughRange ) {
-                    if( HONK ) this.say('HONK', SAY_PUBLIC);
+                    this.honk();
                     this.data.moveMode = 'evade';
                 }
                 if( !this.data.path || this.data.path.length == 0 )
@@ -157,16 +198,16 @@ var mod = {
                 } else if( range > enoughRange ) {
                     this.say('NO PATH!');
                     this.data.targetId = null;
+                    this.leaveBorder();
                 }
             } else { // evade
                 // get path (don't ignore thiss)
                 // try to move. 
                 if( range > enoughRange ){
-                    if( HONK ) this.say('HONK', SAY_PUBLIC);
+                    this.honkEvade();
                     delete this.data.path;
                     this.data.path = this.getPath( targetPos, false);
-                }
-                
+                }                
                 if( this.data.path && this.data.path.length > 0 ) {
                     if( this.data.path.length > 5 ) 
                         this.data.path = this.data.path.substr(0,4);
@@ -175,6 +216,7 @@ var mod = {
                 } else if( range > enoughRange ){
                     this.say('NO PATH!');
                     this.data.targetId = null;
+                    this.leaveBorder();
                 }
             }
         };

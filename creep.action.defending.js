@@ -1,5 +1,4 @@
 var action = new Creep.Action('defending');
-action.reusePath = 0;
 action.isValidAction = function(creep){ return creep.room.situation.invasion; };
 action.isAddableAction = function(){ return true; };
 action.isAddableTarget = function(){ return true; };
@@ -20,7 +19,7 @@ action.newTarget = function(creep){
     return closestHostile;
 };
 action.step = function(creep){
-    if(CHATTY) creep.say(this.name);
+    if(CHATTY) creep.say(this.name, SAY_PUBLIC);
     this.run[creep.data.creepType](creep);
 };
 action.run = {
@@ -29,7 +28,7 @@ action.run = {
         if( range > 3 ){
             var path = creep.room.findPath(creep.pos, creep.target.pos, {ignoreCreeps: true});
             if( path && path.length > 0 ) {
-                var isRampart = _.some( creep.room.lookForAt(LOOK_STRUCTURES, path[0].x, path[0].y), {'structureType': STRUCTURE_RAMPART });
+                var isRampart = COMBAT_CREEPS_RESPECT_RAMPARTS && _.some( creep.room.lookForAt(LOOK_STRUCTURES, path[0].x, path[0].y), {'structureType': STRUCTURE_RAMPART });
                 if(!isRampart){
                     creep.move(path[0].direction);
                 }
@@ -63,6 +62,7 @@ action.run = {
         var path = creep.room.findPath(creep.pos, creep.target.pos);
         // not standing in rampart or next step is rampart as well
         if( path.length > 0 && (
+            !COMBAT_CREEPS_RESPECT_RAMPARTS ||
             !_.some( creep.room.lookForAt(LOOK_STRUCTURES, creep.pos.x, creep.pos.y), {'structureType': STRUCTURE_RAMPART } )  || 
             _.some( creep.room.lookForAt(LOOK_STRUCTURES, path[0].x, path[0].y), {'structureType': STRUCTURE_RAMPART }))
         ){
@@ -75,5 +75,8 @@ action.run = {
                 creep.attack(targets[0]);
         }
     }
+};
+action.onAssignment = function(creep, target) {
+    if( SAY_ASSIGNMENT ) creep.say(String.fromCharCode(9876), SAY_PUBLIC); 
 };
 module.exports = action;

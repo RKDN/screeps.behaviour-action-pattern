@@ -7,7 +7,6 @@ module.exports = {
             this.nextAction(creep);
         }
         if( creep.data.targetId != oldTargetId ) {
-            creep.data.moveMode = null;
             delete creep.data.path;
         }
         // Do some work
@@ -24,12 +23,9 @@ module.exports = {
                 Creep.action.picking,
                 Creep.action.withdrawing, 
                 Creep.action.uncharging, 
+                Creep.action.dismantling,
                 Creep.action.harvesting, 
                 Creep.action.idle];
-
-            if (!this.doWeHaveEnoughToWidral(creep)) {
-                priority.splice(1, 1);
-            }
         }    
         else {                
             if( creep.room.situation.invasion ){
@@ -41,13 +37,16 @@ module.exports = {
                     Creep.action.idle];
             } else {
                 priority = [
-                    Creep.action.picking,
                     Creep.action.repairing, 
-                    Creep.action.feeding, 
                     Creep.action.building, 
+                    Creep.action.feeding, 
                     Creep.action.fueling, 
                     Creep.action.upgrading, 
+                    Creep.action.storing, 
                     Creep.action.idle];
+            }
+            if( creep.room.relativeEnergyAvailable < 1 && (!creep.room.population || !creep.room.population.typeCount['hauler'] || creep.room.population.typeCount['hauler'] < 1) ) { 
+                priority.unshift(Creep.action.feeding);
             }
             if( creep.room.controller && creep.room.controller.ticksToDowngrade < 2000 ) { // urgent upgrading 
                 priority.unshift(Creep.action.upgrading);
@@ -64,19 +63,5 @@ module.exports = {
                     return;
             }
         }
-    },
-    doWeHaveEnoughToWidral: function(creep){
-
-        if (SPAWN_DEFENSE_ON_ATTACK) {
-            let storeNeeded = (Creep.setup.melee.maxCost() + Creep.setup.ranger.maxCost()) * 1;
-            storeNeeded += storeNeeded * 0.50; // Add buffer
-            if (!creep.room.storage || creep.room.storage.store.energy < storeNeeded) {
-                return false;
-            }
-            else
-                return true;
-        }
-        else
-            return true;
     }
 }

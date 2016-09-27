@@ -2,7 +2,7 @@ var action = new Creep.Action('upgrading');
 action.targetRange = 3;
 action.isAddableAction = function(creep){ 
     if( creep.room.storage ) 
-        return creep.room.storage.energy > (LIMIT_STORAGE_ENERGY * 0.5);
+        return creep.room.storage.energy > MAX_STORAGE_ENERGY;
     return true; },
 action.isAddableTarget = function(target){ return true; }, 
 action.isValidAction = function(creep){
@@ -28,6 +28,9 @@ action.step = function(creep){
         }
     } 
     creep.drive( creep.target.pos, this.reachedRange, this.targetRange, range );
+};
+action.onAssignment = function(creep, target) {
+    if( SAY_ASSIGNMENT ) creep.say(String.fromCharCode(9962), SAY_PUBLIC); 
 };
 
 module.exports = action;

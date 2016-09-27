@@ -1,5 +1,5 @@
 var action = new Creep.Action('reserving');
-action.isValidAction = function(creep){ return true; }; 
+action.isValidAction = function(creep){ return true; }; // TODO: check if it is a flag or a controller and reservation < 4999 
 action.isValidTarget = function(target){ return true; }; 
 action.isAddableAction = function(){ return true; };
 action.isAddableTarget = function(){ return true; }; 
@@ -58,5 +58,8 @@ action.work = function(creep){
         workResult = creep.reserveController(creep.target);
     }
     return workResult;
+};
+action.onAssignment = function(creep, target) {
+    if( SAY_ASSIGNMENT ) creep.say(String.fromCharCode(9971), SAY_PUBLIC); 
 };
 module.exports = action;

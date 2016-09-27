@@ -1,29 +1,34 @@
 var action = new Creep.Action('robbing');
 action.maxPerTarget = 2;
-action.isAddableAction = function (target) {
-    return !target.my;
-}
+action.maxPerAction = 4;
 action.isValidAction = function(creep){
-    return (_.sum(creep.carry) < creep.carryCapacity &&
-    FlagDir.find(FLAG_COLOR.invade.robbing, creep.pos) != null
-        // && (creep.room.energyAvailable < creep.room.energyCapacityAvailable || creep.room.towerFreeCapacity > 500 )
-    );
+    return ( _.sum(creep.carry) < creep.carryCapacity && (FlagDir.find(FLAG_COLOR.invade.robbing, creep.pos, true) != null) );
 };
 action.isValidTarget = function(target){
-    return ( (target != null)  );
+    return ( target.store && _.sum(target.store) > 0 ) || ( target.energy && target.energy > 0 );
 };  
 action.newTarget = function(creep){
-    let t = creep.pos.findClosestByPath(FIND_HOSTILE_STRUCTURES, {
-        filter: function(o){
-            return o.energy >=  (creep.carryCapacity - _.sum(creep.carry)); 
-            // TODO: check for ANY resource
-            // TODO: o.energy correct? may be o.store.energy
-            // TODO: testing
+    let that = this;
+    let target = creep.pos.findClosestByPath(FIND_STRUCTURES, {
+        filter: function(structure){
+            return that.isValidTarget(structure);
         }
     });
-    return t;
+    return target;
 };
 action.work = function(creep){
-    return creep.withdraw(creep.target, RESOURCE_ENERGY);
+    let ret = OK;
+    if( creep.target.store ) {
+        for( var type in creep.target.store ){
+            if( creep.target.store[type] > 0  )
+                ret = creep.withdraw(creep.target, type);
+        }
+    } else if ( creep.target.energy ) {
+        ret = creep.withdraw(creep.target, 'energy');
+    }
+    return ret;
+};
+action.onAssignment = function(creep, target) {
+    if( SAY_ASSIGNMENT ) creep.say(String.fromCharCode(9760), SAY_PUBLIC); 
 };
 module.exports = action;

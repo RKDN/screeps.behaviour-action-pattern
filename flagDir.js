@@ -16,7 +16,7 @@ var mod = {
         if( flagColor == null || this.list.length == 0) 
             return null;
 
-        let filter = flagColor.filter;
+        let filter = _.clone(flagColor.filter);
         if( local && pos && pos.roomName )
             _.assign(filter, {roomName: pos.roomName, cloaking: "0"});
         else
@@ -39,16 +39,23 @@ var mod = {
                 if( mod ){
                     r = mod(r, flag, modArgs);
                 }
+                flag.valid = r < Infinity;
                 return r;
             };
-            return _.sortBy(flags, range)[0].name;
-        } else return flags[0];
+            let flag = _.sortBy(flags, range)[0];
+            return flag.valid ? flag.name : null;
+        } else return flags[0].name;
     }, 
     find: function(flagColor, pos, local, mod, modArgs){
         let id = this.findName(flagColor, pos, local, mod, modArgs);
         if( id === null ) 
             return null;
         return Game.flags[id];
+    },
+    removeFromDir: function(name){
+        let index = this.list.indexOf(f => f.name === name );
+        if( index > -1 )
+            this.list = this.list.splice(index, 1);
     },
     loop: function(){
         this.list = [];
@@ -74,14 +81,14 @@ var mod = {
         if( flagColor == null || this.list.length == 0) 
             return 0;
 
-        let filter = flagColor.filter;
+        let filter = _.clone(flagColor.filter);
         if( local && pos && pos.roomName )
             _.assign(filter, {roomName: pos.roomName});
         return _.countBy(this.list, filter).true || 0;
     },
     filter: function(flagColor, pos, local){
         if( flagColor == null || this.list.length == 0) 
-            return 0;
+            return [];
         let filter;
         if( Array.isArray(flagColor) ) {
             filter = entry => {
@@ -94,7 +101,7 @@ var mod = {
                 return false;
             };
         } else {
-            filter = flagColor.filter;
+            filter = _.clone(flagColor.filter);
             if( local && pos && pos.roomName )
                 _.assign(filter, {roomName: pos.roomName});
         }
@@ -102,12 +109,12 @@ var mod = {
     },
     filterCustom: function(filter){
         if( filter == null || this.list.length == 0) 
-            return 0;
+            return [];
         return _.filter(this.list, filter);
     },
     rangeMod: function(range, flagItem, args){
-        let rangeModPerCrowd = args.rangeModPerCrowd || 20;
-        let rangeModByType = args.rangeModByType;
+        let rangeModPerCrowd = args && args.rangeModPerCrowd ? args.rangeModPerCrowd : 20;
+        let rangeModByType = args ? args.rangeModByType : null;
         var flag = Game.flags[flagItem.name];
         let crowd;
         if( flag.targetOf ){ // flag is targetted
