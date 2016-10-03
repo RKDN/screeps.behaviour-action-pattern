@@ -358,28 +358,34 @@ var mod = {
                 get: function () {
                     if (_.isUndefined(this._privateerMaxWeight) ) {
                         this._privateerMaxWeight = 0;
-                        let base = 5000;
-                        let that = this;
-                        let adjacent, ownNeighbor, room;
+                        if ( !this.situation.invasion && !this.conserveForDefense ) {
+                            let base = 3000;
+                            let that = this;
+                            let adjacent, ownNeighbor, room, mult;
 
-                        let flagEntries = FlagDir.filter(FLAG_COLOR.invade.exploit);
-                        let countOwn = roomName => {
-                            if( roomName == that.name ) return;
-                            room = Game.rooms[roomName];
-                            if( room && room.controller && room.controller.my )
-                                ownNeighbor++;
-                        };
-                        let calcWeight = flagEntry => {
-                            if( !this.adjacentAccessibleRooms.includes(flagEntry.roomName) ) return;
-                            room = Game.rooms[flagEntry.roomName];
-                            if( room )
-                                adjacent = room.adjacentAccessibleRooms;
-                            else adjacent = Room.adjacentAccessibleRooms(flagEntry.roomName);
-                            ownNeighbor = 1;
-                            adjacent.forEach(countOwn);
-                            that._privateerMaxWeight += (base / ownNeighbor);
-                        };
-                        flagEntries.forEach(calcWeight);
+                            let flagEntries = FlagDir.filter(FLAG_COLOR.invade.exploit);
+                            let countOwn = roomName => {
+                                if( roomName == that.name ) return;
+                                room = Game.rooms[roomName];
+                                if( room && room.controller && room.controller.my )
+                                    ownNeighbor++;
+                            };
+                            let calcWeight = flagEntry => {
+                                if( !this.adjacentAccessibleRooms.includes(flagEntry.roomName) ) return;
+                                room = Game.rooms[flagEntry.roomName];
+                                if( room ) {
+                                    adjacent = room.adjacentAccessibleRooms;
+                                    mult = room.sources.length;
+                                } else {
+                                    adjacent = Room.adjacentAccessibleRooms(flagEntry.roomName);
+                                    mult = 1;
+                                }
+                                ownNeighbor = 1;
+                                adjacent.forEach(countOwn);
+                                that._privateerMaxWeight += (mult * base / ownNeighbor);
+                            };
+                            flagEntries.forEach(calcWeight);
+                        }
                     };
                     return this._privateerMaxWeight;
                 }
@@ -756,7 +762,7 @@ var mod = {
             } else this.memory.minerals = [];
         };
         
-        Room.prototype.linksManager = function () {
+        Room.prototype.linkDispatcher = function () {
             let filled = l => l.cooldown == 0 && l.energy > l.energyCapacity * 0.85;
             let empty = l =>  l.energy < l.energyCapacity * 0.15;
             let filledIn = this.linksIn.filter(filled); 
@@ -859,7 +865,7 @@ var mod = {
 
                 this.roadConstruction();
                 this.springGun();
-                this.linksManager();
+                this.linkDispatcher();
 
                 if( this.controller && this.controller.my ) {
                     var registerHostile = creep => {
